@@ -1,0 +1,32 @@
+文档新增内容 与 运行/数据文件 对应说明
+（所有实验均在 D:\bisai 目录下运行，python 使用 venv：C:\Users\马加帅\.workbuddy\binaries\python\envs\default\Scripts\python.exe）
+
+【1_运行脚本】
+- run_multiseed.bat          → 对应文档 表 5-5（多种子复现：3 seeds × 4 pred_len，avg MSE 0.0903 / MAE 0.2429）
+- run_ablation.bat           → 对应文档 表 5-6（组件贡献消融：w/o Dist-Align / w/o Anchor / w/o Fusion）
+- run_sensitivity.bat        → 对应文档 表 5-7（敏感性分析：seq_len 36/48、d_model 128/256）
+- run_experiments.py         → 实验总驱动（串行跑全部 40 组，解析 mse/mae 汇总到 experiment_results.csv）
+- gen_figures.py             → 对应文档 图 5-3（跨模态注意力热力图）、图 5-4（t-SNE 模态分布对比图）；
+                               以主实验相同配置（seed 1110、pred_len 12）进程内训练+测试后挂钩捕获数据绘图，
+                               本次运行测试集 MSE 0.0799 / MAE 0.2305
+
+【2_模型与代码修改】（为支持实验/绘图对项目做的修改，位于 LLMNet-main\LLMNet-main）
+- run.py                     → 新增 --disable_mmd/--disable_anchor/--disable_fusion 消融开关、
+                               --precomputed_text 预计算文本模式、--seed 等参数
+- models\TriAlignNet.py      → 消融分支实现（MMD 关闭/跳过锚点交互/融合层均值池化回退）
+- data_provider\data_loader.py → 缺失列自动补全 + 预计算文本嵌入加载分支
+- exp\exp_long_term_forecasting.py → 跳过 GGUF 本地大模型加载（使用预计算嵌入）
+
+【3_实验结果】
+- experiment_results.csv     → 全部 40 组实验原始结果（列：tag, seq_len, pred_len, seed, variant, MSE, MAE），
+                               表 5-5 / 5-6 / 5-7 中的数值均由本表统计得出
+
+【4_数据文件】（对应 --root_path ./Dataset/Dataset）
+- protein_output.csv         → 农业月度时序主表（贸易量等指标，70/10/20 按时间划分）
+- monthly_text_embeddings_new.csv → 预计算月度文本嵌入（451 个月 × 1536 维，Qwen2 输入嵌入层均值池化所得），
+                               即文档 3.3.4 文本质量控制与 5.1.1 数据说明对应的文本模态来源
+
+【5_生成图表】
+- fig5_3_attention_heatmap.png → 图 5-3 原图（逐窗口标准化的跨模态余弦注意力能量热力图，24 键=12 时间锚点+12 文本通道）
+- fig5_4_tsne_modal.png        → 图 5-4 原图（对齐后文本/时序模态特征 t-SNE 分布）
+- fig_captures.npz             → 绘图用的中间捕获数据（注意力能量矩阵 + 双模态特征），可复现重绘
